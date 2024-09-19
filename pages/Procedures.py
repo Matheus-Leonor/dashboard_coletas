@@ -20,7 +20,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 st.markdown('<p class="stTitle">Dashboard Coleta de Combustível</p>', unsafe_allow_html=True)
-
+st.markdown('<p class="body">Periodo das coletas: 2023/12/01 - 2024/09/01</p>', unsafe_allow_html=True)
 #   POSTO
 # definindo nome das colunas
 colunas_posto = ['IdPosto','NomePosto', 'CidadePosto', 'BairroPosto', 'RuaPosto', 'NumeroPosto']
