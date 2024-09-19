@@ -1,4 +1,3 @@
-import pyodbc
 import pandas as pd
 import streamlit as st
 import plotly.express as px
@@ -40,7 +39,7 @@ colunas_coleta = ['IdColeta','DataColeta', 'FkPosto', 'FkCombustivel','ValorComb
 # transformando csv em dataframe
 dados_tabela_coleta = pd.read_csv('./data/tabela_coleta.csv', names=colunas_coleta, sep=';')
 
-#  DADOS TOAIS
+#  DADOS TOTAIS
 # Unir as tabelas coleta e posto pela chave FkPosto = IdPosto
 df_merged1 = pd.merge(dados_tabela_coleta, dados_tabela_posto, left_on='FkPosto', right_on='IdPosto')
 # Em seguida, unir com a tabela de combustivel pela chave FkCombustivel = IdCombustivel
