@@ -148,8 +148,6 @@ with coluna1:
     st.plotly_chart(fig_valor_minimo, use_container_width = True)
     st.plotly_chart(fig_bar_preço_posto, use_container_width = True)
 with coluna2:
-   
-    st.write("Gráfico Interativo de Preços por Tipo de Combustível")
     tipo_combustivel_especifico = 'Gasolina Comum'
     dados_filtrados = dados_totais[dados_totais['TipoCombustivel'] == tipo_combustivel_especifico ]
     # Cria um gráfico de dispersão usando Plotly
