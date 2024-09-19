@@ -99,15 +99,6 @@ fig_preco_medio_geral = px.bar(dados_totais ,
     title="Preço Médio por Bairro")
 st.plotly_chart(fig_preco_medio_geral)
 
-#Preço Médio por combustivel
-fig_preco_medio= px.bar(dados_totais, 
-       x='NomePosto', 
-       y='QuantidadeAmostras', 
-       color='TipoCombustivel', 
-       title="Quantidade de Amostras por Posto")
-st.plotly_chart(fig_preco_medio)
-
-
 
 fig_scatter  =  px . scatter ( dados_totais ,  
                               y = "NomePosto" ,  
