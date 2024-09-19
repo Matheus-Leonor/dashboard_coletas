@@ -22,48 +22,29 @@ st.markdown("""
     """, unsafe_allow_html=True)
 st.markdown('<p class="stTitle">Dashboard Coleta de Combustível</p>', unsafe_allow_html=True)
 
+#   POSTO
+# definindo nome das colunas
+colunas_posto = ['IdPosto','NomePosto', 'CidadePosto', 'BairroPosto', 'RuaPosto', 'NumeroPosto']
+# transformando csv em dataframe
+dados_tabela_posto = pd.read_csv('./tabelas/tabela_posto.csv', names=colunas_posto, sep=';')
 
-# Função para conectar ao banco de dados usando autenticação do Windows
-def conectar_bd():
-    conexao = pyodbc.connect(
-        'DRIVER={ODBC Driver 17 for SQL Server};'
-        'SERVER=DESKTOP-SUCSSF7\SQLEXPRESS;'
-        'DATABASE=AOP_Banco_de_dados;'
-        'Trusted_Connection=yes;'
-    )
-    return conexao
+#   COMBUSTIVEL
+# definindo nome das colunas
+colunas_combustivel = ['IdCombustivel','TipoCombustivel']
+# transformando csv em dataframe
+dados_tabela_combustivel = pd.read_csv('./tabelas/tabela_combustivel.csv', names=colunas_combustivel, sep=';')
 
-# Função para carregar dados da tabela coleta com informações das outras tabelas
-def carregar_dados(query_select):
-    conexao = conectar_bd()
-    consulta_sql = query_select
-    dados = pd.read_sql(consulta_sql, conexao)
-    conexao.close()
-    return dados
-
-# Dataframe coleta
-dados_coleta = carregar_dados("""
-    SELECT *
-    FROM Tabela_Coleta
-    """)
-#Dataframe posto
-dados_posto = carregar_dados("""
-    SELECT *
-    FROM Tabela_Posto
-    """)
-#Dataframe combustivel
-dados_combustivel = carregar_dados("""
-    SELECT *
-    FROM Tabela_Combustivel
-    """)
-
-
+#   COLETA
+# definindo nome das colunas
+colunas_coleta = ['IdColeta','DataColeta', 'FkPosto', 'FkCombustivel','ValorCombustivel' ]
+# transformando csv em dataframe
+dados_tabela_coleta = pd.read_csv('./tabelas/tabela_coleta.csv', names=colunas_coleta, sep=';')
 
 # Selectbox para o usuário selecionar qual tabela quer visualizar
 tabelas = {
-    'Dados do Posto' : dados_posto,
-    'Dados da Coleta' : dados_coleta,
-    'Dados do Combustivel' : dados_combustivel
+    'Dados do Posto' : dados_tabela_posto,
+    'Dados da Coleta' : dados_tabela_coleta ,
+    'Dados do Combustivel' : dados_tabela_combustivel
     
 }
 tabela_selecionada = st.selectbox('Selecione a tabela', list(tabelas.keys()))
