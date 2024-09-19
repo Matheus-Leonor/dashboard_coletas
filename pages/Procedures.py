@@ -53,7 +53,7 @@ dados_totais = pd.merge(df_merged1, dados_tabela_combustivel,  left_on='FkCombus
 aba1, aba2, aba3 = st.tabs(['Menor Valor de Combustível ', 'Preço Médio Geral',  'Listagem Preço Médio c/ Amostras'])
 
 with aba1:
-    # Seleção de parâmetros opcionais
+   # Seleção de parâmetros opcionais
     bairros_disponiveis = ['Todos'] + list(dados_totais['BairroPosto'].unique())
     tipos_combustivel_disponiveis = ['Todos'] + list(dados_totais['TipoCombustivel'].unique())
 
@@ -69,18 +69,21 @@ with aba1:
         
         return dados_totais
 
-    # Função para encontrar o menor preço por combustível
+    # Função para encontrar o menor preço por combustível, posto e bairro
     def obter_menor_preco(dados_totais):
-        # Agrupar por TipoCombustivel e encontrar o menor ValorCombustivel
-        dados_agrupados = dados_totais.loc[dados_totais.groupby('TipoCombustivel')['ValorCombustivel'].idxmin()]
-        # Selecionar as colunas desejadas
-        resultado = dados_agrupados[['NomePosto', 'RuaPosto', 'BairroPosto', 'TipoCombustivel', 'ValorCombustivel', 'DataColeta']]
-        return resultado
+        # Agrupar por NomePosto, TipoCombustivel, BairroPosto e encontrar o menor ValorCombustivel
+        dados_agrupados = dados_totais.groupby(['NomePosto', 'TipoCombustivel', 'BairroPosto']).agg({
+            'ValorCombustivel': 'min',  # Menor preço por agrupamento
+            'DataColeta': 'min',        # Data da coleta associada ao menor preço
+            'RuaPosto': 'first'         # Manter a rua do posto
+        }).reset_index()
+        
+        return dados_agrupados
 
     # Filtrar os dados com base nos parâmetros
     dados_filtrados = filtrar_dados(dados_totais, bairro=bairro_selecionado, combustivel=combustivel_selecionado)
 
-    # Obter o menor preço de cada combustível
+    # Obter o menor preço de cada combustível por posto e bairro
     if not dados_filtrados.empty:
         menor_preco_df = obter_menor_preco(dados_filtrados)
         st.dataframe(menor_preco_df)
