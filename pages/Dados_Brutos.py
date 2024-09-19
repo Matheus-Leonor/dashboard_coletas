@@ -26,19 +26,19 @@ st.markdown('<p class="stTitle">Dashboard Coleta de Combustível</p>', unsafe_al
 # definindo nome das colunas
 colunas_posto = ['IdPosto','NomePosto', 'CidadePosto', 'BairroPosto', 'RuaPosto', 'NumeroPosto']
 # transformando csv em dataframe
-dados_tabela_posto = pd.read_csv('./tabelas/tabela_posto.csv', names=colunas_posto, sep=';')
+dados_tabela_posto = pd.read_csv('./data/tabela_posto.csv', names=colunas_posto, sep=';')
 
 #   COMBUSTIVEL
 # definindo nome das colunas
 colunas_combustivel = ['IdCombustivel','TipoCombustivel']
 # transformando csv em dataframe
-dados_tabela_combustivel = pd.read_csv('./tabelas/tabela_combustivel.csv', names=colunas_combustivel, sep=';')
+dados_tabela_combustivel = pd.read_csv('./data/tabela_combustivel.csv', names=colunas_combustivel, sep=';')
 
 #   COLETA
 # definindo nome das colunas
 colunas_coleta = ['IdColeta','DataColeta', 'FkPosto', 'FkCombustivel','ValorCombustivel' ]
 # transformando csv em dataframe
-dados_tabela_coleta = pd.read_csv('./tabelas/tabela_coleta.csv', names=colunas_coleta, sep=';')
+dados_tabela_coleta = pd.read_csv('./data/tabela_coleta.csv', names=colunas_coleta, sep=';')
 
 # Selectbox para o usuário selecionar qual tabela quer visualizar
 tabelas = {
