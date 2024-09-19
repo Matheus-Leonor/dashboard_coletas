@@ -47,6 +47,14 @@ df_merged1 = pd.merge(dados_tabela_coleta, dados_tabela_posto, left_on='FkPosto'
 # Usar groupby para contar as amostras por NomePosto e TipoCombustivel
 
 dados_totais = pd.merge(df_merged1, dados_tabela_combustivel,  left_on='FkCombustivel', right_on='IdCombustivel')
+# Converter a coluna para tipo numérico (float), forçando erros a serem transformados em NaN
+# Substituir as vírgulas por pontos na coluna 'ValorCombustivel'
+dados_totais['ValorCombustivel'] = dados_totais['ValorCombustivel'].str.replace(',', '.')
+# Converter a coluna 'ValorCombustivel' para numérico (float)
+dados_totais['ValorCombustivel'] = pd.to_numeric(dados_totais['ValorCombustivel'], errors='coerce')
+dados_totais['DataColeta'] = pd.to_datetime(dados_totais['DataColeta'])
+# Extrair apenas dia, mês e ano no formato desejado
+dados_totais['DataColeta'] = dados_totais['DataColeta'].dt.strftime('%d-%m-%Y')
 
 
 # Interface Streamlit       
@@ -91,44 +99,97 @@ with aba1:
         st.write("Não há dados disponíveis para os parâmetros informados.")
 
 with aba2:
-    st.title("Preço Médio de Combustível")
+    # Seleção de parâmetros opcionais
+    bairros_disponiveis = ['Todos'] + list(dados_totais['BairroPosto'].unique())
+    tipos_combustivel_disponiveis = ['Todos'] + list(dados_totais['TipoCombustivel'].unique())
 
-    data_inicial = st.date_input("Data Inicial")
-    data_final = st.date_input("Data Final")
+    bairro_selecionado = st.selectbox("Selecione um Bairro (opcional)", bairros_disponiveis, key="aba2_bairro_slect")
+    combustivel_selecionado = st.selectbox("Selecione o Tipo de Combustível (opcional)", tipos_combustivel_disponiveis, key="aba2_combustivel_select")
+    data_inicial = st.date_input("Data inicial (opcional)", None)
+    data_final = st.date_input("Data final (opcional)", None)
+   
 
-    if st.button("Buscar preço"):
-        # Chama a função com ou sem parâmetros
-        df = listar_preco_medio(dados_totais, data_inicial if data_inicial else None, data_final if data_final else None)
+    # Função para filtrar os dados
+    def filtrar_dados(dados_totais, bairro=None, combustivel=None, data_inicial=None, data_final=None):
+        if bairro and bairro != 'Todos':
+            dados_totais = dados_totais[dados_totais['BairroPosto'] == bairro]
+        if combustivel and combustivel != 'Todos':
+            dados_totais = dados_totais[dados_totais['TipoCombustivel'] == combustivel]
+        if data_inicial:
+            dados_totais['DataColeta'] = pd.to_datetime(dados_totais['DataColeta'], format='%d-%m-%Y')
+            dados_totais = dados_totais[dados_totais['DataColeta'] >= pd.to_datetime(data_inicial)]
+        if data_final:
+            dados_totais = dados_totais[dados_totais['DataColeta'] <= pd.to_datetime(data_final)]
+        
+        return dados_totais
+
+    # Função para calcular o preço médio por combustível e posto
+    def calcular_preco_medio_por_postos(dados_totais):
+        # Agrupar por NomePosto e TipoCombustivel e calcular o preço médio
+        dados_agrupados = dados_totais.groupby(['NomePosto', 'TipoCombustivel','BairroPosto','RuaPosto']).agg(
+            PrecoMedio=('ValorCombustivel', 'mean')
+        ).reset_index()
+
+        return dados_agrupados
+
+    # Filtrar os dados com base nos parâmetros
+    dados_filtrados = filtrar_dados(dados_totais, bairro=bairro_selecionado, combustivel=combustivel_selecionado, data_inicial=data_inicial, data_final=data_final)
+
+    # Verificar se há dados filtrados
+    if not dados_filtrados.empty:
+        # Calcular o preço médio por combustível e posto
+        preco_medio_df = calcular_preco_medio_por_postos(dados_filtrados)
+        
+        # Mesclar a tabela de menor preço com a de preço médio (opcional, se quiser exibir ambos)
+        menor_preco_df = obter_menor_preco(dados_filtrados)
+        
+
+            # Exibir a tabela com preço médio por combustível e posto
+        st.write("Tabela com Preço Médio de cada Combustível por Posto:")
+        st.dataframe(preco_medio_df)
     else:
-        # Se não clicar, exibe todos os dados sem filtro
-        df = listar_preco_medio(dados_totais)
-
-    # Exibir dataframe
-    st.dataframe(df, use_container_width = True)
-
-    # Exibir gráfico se dados foram carregados
-    if not df.empty:
-        fig = px.bar(df, x='Posto', y='PrecoMedio', color='TipoCombustivel', title='Preço Médio por Posto')
-        st.plotly_chart(fig)
+        
+        st.write("Não há dados disponíveis para os parâmetros informados.")
+   
 with aba3:
-    # Interface Streamlit
-    st.title("Listagem de Preço Médio de Combustível")
+     # Seleção de parâmetros opcionais
+    data_inicial = st.date_input("Data inicial", None,key='aba3_data_inicial')
+    data_final = st.date_input("Data final", None,key='aba3_data_final')
+   
 
-    data_inicial = st.date_input("Data Inicial", key="data_inicial_lista")
-    data_final = st.date_input("Data Final", key="data_final_lista")
+    # Função para filtrar os dados
+    def filtrar_dados(dados_totais, data_inicial=None, data_final=None):
+        if data_inicial:
+            dados_totais['DataColeta'] = pd.to_datetime(dados_totais['DataColeta'], format='%Y-%m-%d')
+            dados_totais = dados_totais[dados_totais['DataColeta'] >= pd.to_datetime(data_inicial)]
+        if data_final:
+            dados_totais = dados_totais[dados_totais['DataColeta'] <= pd.to_datetime(data_final)]
+        
+        return dados_totais
 
-    if st.button("Buscar", key="buscar_lista"):
-        # Chama a função com ou sem parâmetros
-        df = listagem_preco_medio(dados_tabela_posto, dados_tabela_combustivel, dados_tabela_coleta,data_inicial, data_final)
+    # Função para calcular o preço médio por combustível e posto
+    def calcular_preco_medio_por_postos(dados_totais):
+        # Agrupar por NomePosto e TipoCombustivel e calcular o preço médio
+        dados_agrupados = dados_totais.groupby(['NomePosto','BairroPosto']).agg(
+            QuantidadeAmostras=('IdColeta', 'count'),
+            PrecoMedio=('ValorCombustivel', 'mean')
+        ).reset_index()
+
+        return dados_agrupados
+
+
+    # Filtrar os dados com base nos parâmetros
+    dados_filtrados = filtrar_dados(dados_totais,data_inicial=data_inicial, data_final=data_final)
+
+    # Verificar se há dados filtrados
+    if not dados_filtrados.empty:
+        # Calcular o preço médio por combustível e posto
+        preco_medio_df = calcular_preco_medio_por_postos(dados_filtrados)
+            # Exibir a tabela com preço médio por combustível e posto
+        st.write("Tabela com Preço Médio de cada Combustível por Posto:")
+        st.dataframe(preco_medio_df)
+
     else:
-        # Se não clicar, exibe todos os dados sem filtro
-        df = listagem_preco_medio(dados_tabela_posto, dados_tabela_combustivel, dados_tabela_coleta)
-
-    # Exibir dataframe
-    st.dataframe(df)
-
-    # Exibir gráfico se dados foram carregados
-    if not df.empty:
-        fig = px.bar(df, x='Posto', y='PrecoMedio', color='TipoCombustivel', title='Preço Médio por Posto e Tipo de Combustível')
-        st.plotly_chart(fig)
+        
+        st.write("Não há dados disponíveis para os parâmetros informados.")
        
