@@ -22,163 +22,71 @@ st.markdown("""
     """, unsafe_allow_html=True)
 st.markdown('<p class="stTitle">Dashboard Coleta de Combustível</p>', unsafe_allow_html=True)
 
+#   POSTO
+# definindo nome das colunas
+colunas_posto = ['IdPosto','NomePosto', 'CidadePosto', 'BairroPosto', 'RuaPosto', 'NumeroPosto']
+# transformando csv em dataframe
+dados_tabela_posto = pd.read_csv('./data/tabela_posto.csv', names=colunas_posto, sep=';')
 
+#   COMBUSTIVEL
+# definindo nome das colunas
+colunas_combustivel = ['IdCombustivel','TipoCombustivel']
+# transformando csv em dataframe
+dados_tabela_combustivel = pd.read_csv('./data/tabela_combustivel.csv', names=colunas_combustivel, sep=';')
 
-# Função para conectar ao banco de dados usando autenticação do Windows
-def conectar_bd():
-    conexao = pyodbc.connect(
-        'DRIVER={ODBC Driver 17 for SQL Server};'
-        'SERVER=DESKTOP-SUCSSF7\SQLEXPRESS;'
-        'DATABASE=AOP_Banco_de_dados;'
-        'Trusted_Connection=yes;'
-    )
-    return conexao
+#   COLETA
+# definindo nome das colunas
+colunas_coleta = ['IdColeta','DataColeta', 'FkPosto', 'FkCombustivel','ValorCombustivel' ]
+# transformando csv em dataframe
+dados_tabela_coleta = pd.read_csv('./data/tabela_coleta.csv', names=colunas_coleta, sep=';')
 
-# Função para carregar dados da tabela coleta com informações das outras tabelas
-def carregar_dados():
-    conexao = conectar_bd()
-    consulta_sql = """
-    SELECT *
-    FROM Tabela_Coleta
+#  DADOS TOAIS
+# Unir as tabelas coleta e posto pela chave FkPosto = IdPosto
+df_merged1 = pd.merge(dados_tabela_coleta, dados_tabela_posto, left_on='FkPosto', right_on='IdPosto')
+# Em seguida, unir com a tabela de combustivel pela chave FkCombustivel = IdCombustivel
+# Usar groupby para contar as amostras por NomePosto e TipoCombustivel
 
-    """
-    dados = pd.read_sql(consulta_sql, conexao)
-    conexao.close()
-    return dados
+dados_totais = pd.merge(df_merged1, dados_tabela_combustivel,  left_on='FkCombustivel', right_on='IdCombustivel')
 
-dados_coleta = carregar_dados()
-
-def carregar_dados2():
-    conexao = conectar_bd()
-    consulta_sql = """
-    SELECT
-        IdColeta,
-        NomePosto,
-        CidadePosto,
-        BairroPosto,
-        RuaPosto,
-        NumeroPosto,
-        TipoCombustivel,
-        DataColeta,
-        ValorCombustivel,
-	    COUNT(*) OVER (PARTITION BY NomePosto, TipoCombustivel) AS QuantidadeAmostras
-    FROM 
-        Tabela_Coleta
-    INNER JOIN
-        Tabela_Posto ON FkPosto = IdPosto
-    INNER JOIN
-        Tabela_Combustivel ON FkCombustivel = IdCombustivel
-
-    """
-    dados = pd.read_sql(consulta_sql, conexao)
-    conexao.close()
-    return dados
-
-dados_totais = carregar_dados2()
-
-# Agrupar por TipoCombustivel e DataColeta e calcular o preço médio
-df_agrupado = dados_totais.groupby(['TipoCombustivel', 'DataColeta'])['ValorCombustivel'].min().reset_index()
-#Procedure valor minimo por: 
-def get_data(bairro, tipo_combustivel):
-    conn_str = (
-         'DRIVER={ODBC Driver 17 for SQL Server};'
-         'SERVER=DESKTOP-SUCSSF7\SQLEXPRESS;'
-         'DATABASE=AOP_Banco_de_dados;'
-         'Trusted_Connection=yes;'
-    )
-
-    with pyodbc.connect(conn_str) as conn:
-        cursor = conn.cursor()
-        cursor.execute("EXEC ValorMinimoCombustivel @BairroPosto=?, @TipoCombustivel=?", bairro, tipo_combustivel)
-        rows = cursor.fetchall()
-        df = pd.DataFrame.from_records(rows, columns=[desc[0] for desc in cursor.description])
-    return df
-
-#Procedure preço medio
-def get_preco_medio(data_inicial=None, data_final=None):
-    conexao = conectar_bd()
-    cursor = conexao.cursor()
-
-    # Montando a consulta SQL com base nos parâmetros fornecidos
-    if data_inicial and data_final:  # Se ambos os parâmetros forem fornecidos
-        query = """
-        EXEC PrecoMedio @DataInicial=?, @DataFinal=?
-        """
-        cursor.execute(query, (data_inicial, data_final))
-    elif data_inicial:  # Se apenas o parâmetro data_inicial for fornecido
-        query = """
-        EXEC PrecoMedio @DataInicial=?, @DataFinal=NULL
-        """
-        cursor.execute(query, (data_inicial,))
-    elif data_final:  # Se apenas o parâmetro data_final for fornecido
-        query = """
-        EXEC PrecoMedio @DataInicial=NULL, @DataFinal=?
-        """
-        cursor.execute(query, (data_final,))
-    else:  # Se nenhum parâmetro for fornecido
-        query = """
-        EXEC PrecoMedio @DataInicial=NULL, @DataFinal=NULL
-        """
-        cursor.execute(query)
-    
-    # Fetching the results and creating a DataFrame
-    rows = cursor.fetchall()
-    columns = [desc[0] for desc in cursor.description]
-    df = pd.DataFrame.from_records(rows, columns=columns)
-    
-    conexao.close()
-    return df
-
-# Função para carregar dados com filtros opcionais
-def get_listagem_preco_medio(data_inicial=None, data_final=None):
-    conexao = conectar_bd()
-    cursor = conexao.cursor()
-
-    # Montando a consulta SQL com base nos parâmetros fornecidos
-    if data_inicial and data_final:  # Se ambos os parâmetros forem fornecidos
-        query = """
-        EXEC ListagemPrecoMedio @DataInicial=?, @DataFinal=?
-        """
-        cursor.execute(query, (data_inicial, data_final))
-    else:  # Se os parâmetros não forem fornecidos
-        query = """
-        EXEC ListagemPrecoMedio @DataInicial=NULL, @DataFinal=NULL
-        """
-        cursor.execute(query)
-    
-    # Fetching the results and creating a DataFrame
-    rows = cursor.fetchall()
-    columns = [desc[0] for desc in cursor.description]
-    df = pd.DataFrame.from_records(rows, columns=columns)
-    
-    conexao.close()
-    return df
 
 # Interface Streamlit       
 aba1, aba2, aba3 = st.tabs(['Menor Valor de Combustível ', 'Preço Médio Geral',  'Listagem Preço Médio c/ Amostras'])
 
 with aba1:
-    #Interface procedure valor minimo
-    st.title("Menor Valor de Combustível")
-    bairro = st.text_input("Bairro")
-    tipo_combustivel = st.text_input("Tipo de Combustível")
-    if st.button("Buscar"):
-        df = get_data(bairro, tipo_combustivel)
-        fig = px.bar(df, x='Posto', y='ValorMinimo', color='TipoCombustivel', title='Menor Valor por Posto')
-        st.dataframe(df)
-        
-    ## Gráfico de menor valor do combustivel por data e tipo:
-    fig_variacao_combustivel = px.line(df_agrupado, 
-                x = 'DataColeta',
-                y = 'ValorCombustivel',
-                markers = True, 
-                range_y = (0,df_agrupado.max()), 
-                color = 'TipoCombustivel', 
-                line_dash = 'TipoCombustivel',
-                title = 'Variação do valor')
+    # Seleção de parâmetros opcionais
+    bairros_disponiveis = ['Todos'] + list(dados_totais['BairroPosto'].unique())
+    tipos_combustivel_disponiveis = ['Todos'] + list(dados_totais['TipoCombustivel'].unique())
 
-    fig_variacao_combustivel.update_layout(yaxis_title='Variação combustivel')
-    st.plotly_chart(fig_variacao_combustivel)
+    bairro_selecionado = st.selectbox("Selecione um Bairro (opcional)", bairros_disponiveis)
+    combustivel_selecionado = st.selectbox("Selecione o Tipo de Combustível (opcional)", tipos_combustivel_disponiveis)
+
+    # Função para filtrar os dados
+    def filtrar_dados(dados_totais, bairro=None, combustivel=None):
+        if bairro and bairro != 'Todos':
+            dados_totais = dados_totais[dados_totais['BairroPosto'] == bairro]
+        if combustivel and combustivel != 'Todos':
+            dados_totais = dados_totais[dados_totais['TipoCombustivel'] == combustivel]
+        
+        return dados_totais
+
+    # Função para encontrar o menor preço por combustível
+    def obter_menor_preco(dados_totais):
+        # Agrupar por TipoCombustivel e encontrar o menor ValorCombustivel
+        dados_agrupados = dados_totais.loc[dados_totais.groupby('TipoCombustivel')['ValorCombustivel'].idxmin()]
+        # Selecionar as colunas desejadas
+        resultado = dados_agrupados[['NomePosto', 'RuaPosto', 'BairroPosto', 'TipoCombustivel', 'ValorCombustivel', 'DataColeta']]
+        return resultado
+
+    # Filtrar os dados com base nos parâmetros
+    dados_filtrados = filtrar_dados(dados_totais, bairro=bairro_selecionado, combustivel=combustivel_selecionado)
+
+    # Obter o menor preço de cada combustível
+    if not dados_filtrados.empty:
+        menor_preco_df = obter_menor_preco(dados_filtrados)
+        st.dataframe(menor_preco_df)
+    else:
+        st.write("Não há dados disponíveis para os parâmetros informados.")
+
 with aba2:
     st.title("Preço Médio de Combustível")
 
@@ -187,10 +95,10 @@ with aba2:
 
     if st.button("Buscar preço"):
         # Chama a função com ou sem parâmetros
-        df = get_preco_medio(data_inicial if data_inicial else None, data_final if data_final else None)
+        df = listar_preco_medio(dados_totais, data_inicial if data_inicial else None, data_final if data_final else None)
     else:
         # Se não clicar, exibe todos os dados sem filtro
-        df = get_preco_medio()
+        df = listar_preco_medio(dados_totais)
 
     # Exibir dataframe
     st.dataframe(df, use_container_width = True)
@@ -208,10 +116,10 @@ with aba3:
 
     if st.button("Buscar", key="buscar_lista"):
         # Chama a função com ou sem parâmetros
-        df = get_listagem_preco_medio(data_inicial if data_inicial else None, data_final if data_final else None)
+        df = listagem_preco_medio(dados_tabela_posto, dados_tabela_combustivel, dados_tabela_coleta,data_inicial, data_final)
     else:
         # Se não clicar, exibe todos os dados sem filtro
-        df = get_listagem_preco_medio()
+        df = listagem_preco_medio(dados_tabela_posto, dados_tabela_combustivel, dados_tabela_coleta)
 
     # Exibir dataframe
     st.dataframe(df)
