@@ -1,5 +1,8 @@
 # Dashboard de Coleta de Preços de Combustíveis
 
+![dash_graficos](https://github.com/user-attachments/assets/a23f9581-9579-4770-8310-1b5f9a93c6f2)
+
+
 Este projeto consiste em um **Dashboard Interativo de Coleta de Preços de Combustíveis**, desenvolvido utilizando **Streamlit, Pandas** e **Plotly**. A aplicação permite a visualização e análise de dados de preços de combustíveis coletados em diferentes postos, abrangendo o período de **01 de dezembro de 2023 a 01 de setembro de 2024**.
 
 ## 🛠 Tecnologias Utilizadas
@@ -8,6 +11,7 @@ Este projeto consiste em um **Dashboard Interativo de Coleta de Preços de Combu
 - **Pandas**: Biblioteca para tratamento e análise dos dados.
 - **Plotly**: Utilizado para visualização gráfica dos dados.
 
+![dash_procedures](https://github.com/user-attachments/assets/bb5bc048-95d4-47dc-af5d-7d3a86f5674e)
 ## 📊 Funcionalidades
 
 O dashboard oferece as seguintes funcionalidades:
@@ -41,3 +45,4 @@ Inicialmente, o projeto utilizava a biblioteca **pyodbc** para conectar-se ao ba
 3. **Visualização no Dashboard**: A interface construída com Streamlit permite a interação do usuário com os dados, filtrando por tipo de combustível, bairro e período de tempo.
 
 ## 🚀 Visualize o projeto: https://dashboardcoletas-hwv2b8zxdennnrkytndbng.streamlit.app/
+
